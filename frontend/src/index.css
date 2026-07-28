@@ -1,0 +1,199 @@
+/* ============================================================
+   OutFast — Design System (CSS Variables & Base Styles)
+   ============================================================
+   Basado en los design tokens del documento de especificación.
+   Concepto visual: "etiqueta de ropa" (hangtag).
+   ============================================================ */
+
+/* ---------- Design Tokens ---------- */
+:root {
+  /* Paleta principal */
+  --bg-base: #F5F6F4;
+  --ink: #1B2430;
+  --accent-primary: #FF5A36;
+  --accent-secondary: #3E5C76;
+  --status-clean: #8FBF6F;
+  --status-dirty: #C9C2B8;
+
+  /* Superficies */
+  --surface-card: #FFFFFF;
+  --surface-overlay: rgba(27, 36, 48, 0.6);
+
+  /* Tipografía */
+  --font-display: 'Archivo Black', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Espaciado */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Bordes */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Sombras */
+  --shadow-card: 0 2px 8px rgba(27, 36, 48, 0.08);
+  --shadow-elevated: 0 8px 24px rgba(27, 36, 48, 0.12);
+
+  /* Transiciones */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* ---------- Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-base);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Tipografía ---------- */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  line-height: 1.2;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Hangtag Card (Elemento Signature) ---------- */
+/* Tarjeta con "agujero" en la esquina superior izquierda,
+   simulando una etiqueta de ropa colgada. */
+.hangtag {
+  position: relative;
+  background: var(--surface-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: visible;
+  transition: box-shadow var(--transition-normal),
+              transform var(--transition-normal);
+}
+
+.hangtag::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-base);
+  border-radius: 50%;
+  box-shadow: inset 0 1px 3px rgba(27, 36, 48, 0.15);
+  z-index: 1;
+}
+
+.hangtag:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-2px);
+}
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #e84e2d;
+}
+
+.btn-secondary {
+  background-color: var(--accent-secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #344d63;
+}
+
+/* ---------- Status Badges ---------- */
+.status-badge {
+  display: inline-block;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-clean {
+  background-color: var(--status-clean);
+  color: white;
+}
+
+.status-dirty {
+  background-color: var(--status-dirty);
+  color: var(--ink);
+}
+
+/* ---------- Placeholder Page (temporal) ---------- */
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: var(--space-md);
+}
+
+.placeholder-page h1 {
+  font-size: 2.5rem;
+  color: var(--accent-primary);
+}
+
+/* ---------- Accessibility ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
