@@ -1,0 +1,72 @@
+# ============================================================
+# OutFast — Docker Compose para desarrollo local
+# ============================================================
+# Levanta los 3 servicios + PostgreSQL en un solo comando:
+#   docker compose up
+#
+# Puertos:
+#   5173 → Frontend (Vite)
+#   8080 → Backend Core (Spring Boot)
+#   8000 → Backend AI (FastAPI)
+#   5432 → PostgreSQL
+# ============================================================
+
+services:
+  # ---- Base de datos ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: outfast-db
+    environment:
+      POSTGRES_DB: outfast
+      POSTGRES_USER: outfast
+      POSTGRES_PASSWORD: outfast_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U outfast"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---- Backend Core (Java / Spring Boot) ----
+  backend-core:
+    build: ./backend-core
+    container_name: outfast-core
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: outfast
+      DB_USER: outfast
+      DB_PASS: outfast_dev
+      AI_SERVICE_URL: http://backend-ai:8000
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8080:8080"
+
+  # ---- Backend AI (Python / FastAPI) ----
+  backend-ai:
+    build: ./backend-ai
+    container_name: outfast-ai
+    env_file:
+      - ./backend-ai/.env
+    ports:
+      - "8000:8000"
+
+  # ---- Frontend (React / Vite) ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: outfast-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend-core
+
+volumes:
+  postgres_data:
