@@ -38,11 +38,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: outfast
-      DB_USER: outfast
-      DB_PASS: outfast_dev
+      DATABASE_URL: jdbc:postgresql://postgres:5432/outfast
+      DATABASE_USERNAME: outfast
+      DATABASE_PASSWORD: outfast_dev
       AI_SERVICE_URL: http://backend-ai:8000
       SPRING_PROFILES_ACTIVE: dev
     ports:
