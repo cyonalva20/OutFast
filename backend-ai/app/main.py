@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+from app.routers import classify
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 app = FastAPI(
     title="OutFast AI Microservice",
@@ -7,7 +13,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Permitir CORS temporalmente para desarrollo
+# CORS para desarrollo
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,10 +22,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Registrar routers
+app.include_router(classify.router, tags=["Clasificación"])
+
+
 @app.get("/health")
 async def health_check():
-    """
-    Endpoint de monitoreo usado por Spring Boot y Docker
-    para verificar que el servicio de IA está vivo.
-    """
+    """Endpoint de monitoreo."""
     return {"status": "ok", "service": "backend-ai"}
