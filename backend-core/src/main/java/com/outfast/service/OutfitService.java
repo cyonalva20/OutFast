@@ -66,7 +66,14 @@ public class OutfitService {
                 .findByUserIdAndIsOutfitOfTheDayTrueAndCreatedAtAfter(userId, cutoff);
 
         if (existing.isPresent()) {
-            return toResponse(existing.get());
+            Outfit cached = existing.get();
+            // Ignorar el caché si el outfit está vacío (generado por el antiguo código placeholder)
+            if (cached.getItems() != null && !cached.getItems().isEmpty()) {
+                return toResponse(cached);
+            } else {
+                // Borrar el placeholder para forzar regeneración
+                outfitRepository.delete(cached);
+            }
         }
 
         // Obtener prendas limpias para generar
