@@ -60,17 +60,29 @@ export default function OutfitSuggestion() {
               {outfit.items && outfit.items.length > 0 ? (
                 outfit.items.map(item => (
                   <div key={item.id} className="outfit-item-card hangtag">
-                    <div
-                      style={{
-                        width: '100%', aspectRatio: '3/4',
-                        background: 'var(--bg-base)',
-                        borderRadius: 'var(--radius-sm)',
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: '2rem'
-                      }}
-                    >
-                      👕
-                    </div>
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.category}
+                        style={{
+                          width: '100%', aspectRatio: '3/4',
+                          objectFit: 'cover',
+                          borderRadius: 'var(--radius-sm)'
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%', aspectRatio: '3/4',
+                          background: 'var(--bg-base)',
+                          borderRadius: 'var(--radius-sm)',
+                          display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: '2rem'
+                        }}
+                      >
+                        👕
+                      </div>
+                    )}
                     <p>{item.category} — {item.color}</p>
                   </div>
                 ))
