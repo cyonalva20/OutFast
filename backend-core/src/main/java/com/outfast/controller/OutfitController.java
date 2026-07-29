@@ -29,11 +29,30 @@ public class OutfitController {
         return ResponseEntity.ok(service.getAllByUser(userId));
     }
 
+    @GetMapping("/daily")
+    public ResponseEntity<OutfitResponse> getDaily(
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        OutfitResponse daily = service.getDailyOutfit(userId);
+        if (daily == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(daily);
+    }
+
     @PostMapping("/generate-daily")
     public ResponseEntity<OutfitResponse> generateDaily(
             @AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok(service.getOrGenerateDaily(userId));
+    }
+
+    @PostMapping("/generate-custom")
+    public ResponseEntity<OutfitResponse> generateCustom(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody(required = false) com.outfast.dto.OutfitCustomRequest request) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(service.generateCustom(userId, request));
     }
 
     @PatchMapping("/{id}/favorite")

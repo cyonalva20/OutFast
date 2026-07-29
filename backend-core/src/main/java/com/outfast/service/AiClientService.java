@@ -74,16 +74,20 @@ public class AiClientService {
     /**
      * Solicita a la IA la generación de outfits basados en prendas disponibles.
      * @param items Lista de prendas limpias representadas como Map
+     * @param preferredStyles Lista de estilos u ocasión para personalizar la recomendación
      * @return Lista de sugerencias (lista de Maps, cada uno con item_ids y reasoning)
      */
-    public List<Map<String, Object>> generateOutfits(List<Map<String, Object>> items) {
+    public List<Map<String, Object>> generateOutfits(List<Map<String, Object>> items, List<String> preferredStyles) {
         String url = aiServiceUrl + "/generate-outfit";
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // El payload esperado por FastAPI es {"items": [...], "preferred_styles": null, "base_item_id": null}
-            Map<String, Object> body = Map.of("items", items);
+            Map<String, Object> body = new java.util.HashMap<>();
+            body.put("items", items);
+            if (preferredStyles != null && !preferredStyles.isEmpty()) {
+                body.put("preferred_styles", preferredStyles);
+            }
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);

@@ -55,26 +55,35 @@ public class OutfitService {
     }
 
     /**
-     * Obtener o generar el outfit del día.
-     * Si ya existe uno vigente (creado en las últimas 18 horas), lo devuelve.
-     * Si no, genera uno nuevo llamando al microservicio de IA.
+     * Obtener el outfit del día si existe (sin generar uno nuevo).
      */
-    public OutfitResponse getOrGenerateDaily(UUID userId) {
+    public OutfitResponse getDailyOutfit(UUID userId) {
         LocalDateTime cutoff = LocalDateTime.now().minusHours(18);
-
         Optional<Outfit> existing = outfitRepository
                 .findByUserIdAndIsOutfitOfTheDayTrueAndCreatedAtAfter(userId, cutoff);
 
         if (existing.isPresent()) {
             Outfit cached = existing.get();
-            // Ignorar el caché si el outfit está vacío (generado por el antiguo código placeholder)
             if (cached.getItems() != null && !cached.getItems().isEmpty()) {
                 return toResponse(cached);
-            } else {
-                // Borrar el placeholder para forzar regeneración
-                outfitRepository.delete(cached);
             }
         }
+        return null;
+    }
+
+    /**
+     * Obtener o generar el outfit del día.
+     */
+    public OutfitResponse getOrGenerateDaily(UUID userId) {
+        OutfitResponse daily = getDailyOutfit(userId);
+        if (daily != null) {
+            return daily;
+        }
+
+        // Si hay uno vacío en BD, lo borramos para forzar la regeneración
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(18);
+        outfitRepository.findByUserIdAndIsOutfitOfTheDayTrueAndCreatedAtAfter(userId, cutoff)
+                .ifPresent(outfitRepository::delete);
 
         // Obtener prendas limpias para generar
         List<ClothingItem> cleanItems = clothingItemRepository
@@ -98,8 +107,8 @@ public class OutfitService {
         List<ClothingItem> selectedItems = new ArrayList<>();
         
         try {
-            // Llamar al microservicio de IA
-            List<Map<String, Object>> suggestions = aiClientService.generateOutfits(payload);
+            // Llamar al microservicio de IA sin estilos preferidos para el daily
+            List<Map<String, Object>> suggestions = aiClientService.generateOutfits(payload, null);
             
             if (suggestions != null && !suggestions.isEmpty()) {
                 Map<String, Object> bestSuggestion = suggestions.get(0);
@@ -126,7 +135,7 @@ public class OutfitService {
             throw new RuntimeException("La Inteligencia Artificial no devolvió prendas compatibles. Por favor añade más ropa a tu armario.");
         }
 
-        Outfit daily = Outfit.builder()
+        Outfit newDaily = Outfit.builder()
                 .userId(userId)
                 .generatedBy("ai")
                 .generationType(com.outfast.model.enums.GenerationType.DAILY_AUTO)
@@ -134,7 +143,78 @@ public class OutfitService {
                 .items(selectedItems)
                 .build();
 
-        return toResponse(outfitRepository.save(daily));
+        return toResponse(outfitRepository.save(newDaily));
+    }
+
+    /**
+     * Generar un outfit personalizado basado en una ocasión.
+     */
+    public OutfitResponse generateCustom(UUID userId, com.outfast.dto.OutfitCustomRequest request) {
+        // Obtener prendas limpias
+        List<ClothingItem> cleanItems = clothingItemRepository
+                .findByUserIdAndStatus(userId, ClothingStatus.LIMPIO);
+
+        if (cleanItems.size() < 2) {
+            throw new RuntimeException("No tienes suficientes prendas limpias para generar un outfit. Marca algunas como limpias.");
+        }
+
+        // Sanitizar ocasión (max 100 caracteres, trim)
+        List<String> preferredStyles = null;
+        if (request != null && request.getOccasion() != null && !request.getOccasion().trim().isEmpty()) {
+            String occasion = request.getOccasion().trim();
+            if (occasion.length() > 100) {
+                occasion = occasion.substring(0, 100);
+            }
+            preferredStyles = List.of(occasion);
+        }
+
+        // Construir el payload para Python
+        List<Map<String, Object>> payload = cleanItems.stream().map(item -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", item.getId().toString());
+            map.put("category", item.getCategory());
+            map.put("color", item.getColor());
+            map.put("style_tags", item.getStyleTags() != null ? Arrays.asList(item.getStyleTags()) : new ArrayList<>());
+            map.put("image_url", item.getImageUrl());
+            return map;
+        }).collect(Collectors.toList());
+
+        List<ClothingItem> selectedItems = new ArrayList<>();
+        
+        try {
+            // Llamar al microservicio de IA con la ocasión sanitizada
+            List<Map<String, Object>> suggestions = aiClientService.generateOutfits(payload, preferredStyles);
+            
+            if (suggestions != null && !suggestions.isEmpty()) {
+                Map<String, Object> bestSuggestion = suggestions.get(0);
+                List<String> itemIds = (List<String>) bestSuggestion.get("item_ids");
+                
+                if (itemIds != null) {
+                    for (String strId : itemIds) {
+                        try {
+                            UUID uuid = UUID.fromString(strId);
+                            clothingItemRepository.findById(uuid).ifPresent(selectedItems::add);
+                        } catch (IllegalArgumentException e) {}
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("La Inteligencia Artificial no pudo generar el outfit personalizado en este momento.");
+        }
+        
+        if (selectedItems.isEmpty()) {
+            throw new RuntimeException("La IA no devolvió prendas compatibles para esta ocasión. Por favor intenta con otra.");
+        }
+
+        Outfit customOutfit = Outfit.builder()
+                .userId(userId)
+                .generatedBy("ai")
+                .generationType(com.outfast.model.enums.GenerationType.MANUAL_REQUEST)
+                .isOutfitOfTheDay(false)
+                .items(selectedItems)
+                .build();
+
+        return toResponse(outfitRepository.save(customOutfit));
     }
 
     /** Convertir entidad a DTO */
