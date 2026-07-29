@@ -25,7 +25,6 @@ public class ClothingItemRequest {
     private String imageUrl;
 
     /** Categoría de la prenda (puede venir de la IA o editada manualmente) */
-    @NotBlank(message = "La categoría es obligatoria")
     private String category;
 
     /** Color principal */
