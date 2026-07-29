@@ -39,7 +39,17 @@ async def classify_image(image_url: str, api_key: str, api_url: str, model_name:
         Dict con category, color, style_tags
     """
     try:
-        # Construir el payload para la API de Gemini
+        # 1. Descargar la imagen desde Supabase
+        import base64
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            image_resp = await client.get(image_url)
+            image_resp.raise_for_status()
+            
+            # Detectar el mimetype
+            content_type = image_resp.headers.get("Content-Type", "image/jpeg")
+            image_b64 = base64.b64encode(image_resp.content).decode("utf-8")
+
+        # 2. Construir el payload para la API de Gemini
         url = f"{api_url}/models/{model_name}:generateContent?key={api_key}"
         
         payload = {
@@ -47,8 +57,8 @@ async def classify_image(image_url: str, api_key: str, api_url: str, model_name:
                 "parts": [
                     {"text": CLASSIFY_PROMPT},
                     {"inline_data": {
-                        "mime_type": "image/jpeg",
-                        "data": image_url  # En producción: descargar y convertir a base64
+                        "mime_type": content_type,
+                        "data": image_b64
                     }}
                 ]
             }]
