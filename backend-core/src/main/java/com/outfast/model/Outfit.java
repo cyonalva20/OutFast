@@ -26,7 +26,7 @@ import java.util.UUID;
 public class Outfit {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = jakarta.persistence.GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
