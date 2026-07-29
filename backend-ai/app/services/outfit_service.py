@@ -32,13 +32,17 @@ def _build_prompt(items_text: str, preferred_styles: Optional[List[str]], base_i
 {items_text}
 {style_hint}{base_hint}
 
-Genera 2 outfits completos (parte superior + parte inferior + calzado si hay).
-Devuelve SOLO un JSON válido con este formato:
+Reglas estrictas para armar el outfit:
+1. MINIMO 2 PRENDAS: Debes incluir al menos una parte superior (ej. camisa, polo, camiseta) y una parte inferior (ej. pantalón, short, falda).
+2. CAPAS (LAYERING): Puedes combinar múltiples partes superiores si tiene sentido estilístico (ej. una camiseta básica con una chaqueta encima, o un polo con una camisa abierta).
+3. CALZADO Y ACCESORIOS: Inclúyelos si están disponibles y combinan.
+
+Genera 2 opciones de outfits completos. Devuelve SOLO un JSON válido con este formato:
 {{
   "suggestions": [
     {{
       "item_ids": ["id1", "id2", "id3"],
-      "reasoning": "breve explicación de por qué combinan"
+      "reasoning": "breve explicación de por qué combinan y cómo se deben usar las capas"
     }}
   ]
 }}
