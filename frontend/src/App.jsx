@@ -1,31 +1,41 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 
-/**
- * Componente raíz de la aplicación.
- * Configura React Router con las rutas principales.
- * Las páginas reales se crearán en commits posteriores (Parte 4).
- */
+import Layout from './components/Layout'
+import Login from './pages/Login'
+import Closet from './pages/Closet'
+import AddItem from './pages/AddItem'
+import OutfitSuggestion from './pages/OutfitSuggestion'
+import SavedOutfits from './pages/SavedOutfits'
 
-function Placeholder({ name }) {
-  return (
-    <div className="placeholder-page">
-      <h1>{name}</h1>
-      <p className="mono">Página en construcción</p>
-    </div>
-  )
-}
+/**
+ * Componente raíz.
+ *
+ * Estructura de rutas:
+ * /           → Login (splash)
+ * /closet     → Mi Armario (dentro del Layout con navbar)
+ * /add-item   → Añadir Prenda
+ * /outfit     → ¿Qué me pongo?
+ * /saved      → Outfits Guardados
+ */
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Placeholder name="OutFast" />} />
-        <Route path="/login" element={<Placeholder name="Login" />} />
-        <Route path="/closet" element={<Placeholder name="Mi Armario" />} />
-        <Route path="/add-item" element={<Placeholder name="Añadir Prenda" />} />
-        <Route path="/outfit" element={<Placeholder name="¿Qué me pongo?" />} />
-        <Route path="/saved" element={<Placeholder name="Outfits Guardados" />} />
+        {/* Ruta pública (sin navbar) */}
+        <Route path="/" element={<Login />} />
+
+        {/* Rutas protegidas (con navbar inferior) */}
+        <Route element={<Layout />}>
+          <Route path="/closet" element={<Closet />} />
+          <Route path="/add-item" element={<AddItem />} />
+          <Route path="/outfit" element={<OutfitSuggestion />} />
+          <Route path="/saved" element={<SavedOutfits />} />
+        </Route>
+
+        {/* Ruta catch-all: redirigir al login */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
