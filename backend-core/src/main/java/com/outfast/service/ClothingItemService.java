@@ -28,15 +28,35 @@ import java.util.stream.Collectors;
 public class ClothingItemService {
 
     private final ClothingItemRepository repository;
+    private final AiClientService aiClientService;
 
     /** Crear una prenda nueva */
     public ClothingItemResponse create(UUID userId, ClothingItemRequest request) {
+        String category = request.getCategory();
+        String color = request.getColor();
+        String[] styleTags = request.getStyleTags();
+
+        // Si se subió una imagen pero no se especificó categoría/color, llamar a la IA
+        if (request.getImageUrl() != null && !request.getImageUrl().isEmpty() && 
+            (category == null || category.isEmpty())) {
+            
+            var aiResult = aiClientService.classifyImage(request.getImageUrl());
+            category = (String) aiResult.getOrDefault("category", "otro");
+            color = (String) aiResult.getOrDefault("color", "sin definir");
+            
+            // Extraer lista de estilos y convertir a Array
+            if (aiResult.containsKey("style_tags")) {
+                var tagsList = (java.util.List<String>) aiResult.get("style_tags");
+                styleTags = tagsList.toArray(new String[0]);
+            }
+        }
+
         ClothingItem item = ClothingItem.builder()
                 .userId(userId)
                 .imageUrl(request.getImageUrl())
-                .category(request.getCategory())
-                .color(request.getColor())
-                .styleTags(request.getStyleTags())
+                .category(category)
+                .color(color)
+                .styleTags(styleTags)
                 .status(ClothingStatus.LIMPIO)
                 .build();
 
