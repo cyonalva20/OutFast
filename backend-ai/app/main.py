@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import classify
+from app.routers import classify, outfit
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -24,6 +24,7 @@ app.add_middleware(
 
 # Registrar routers
 app.include_router(classify.router, tags=["Clasificación"])
+app.include_router(outfit.router, tags=["Outfits"])
 
 
 @app.get("/health")
