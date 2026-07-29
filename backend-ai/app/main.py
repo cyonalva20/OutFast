@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from app.routers import classify, outfit
+from app.middleware import ErrorHandlerMiddleware
+from app.config import settings
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -12,6 +14,9 @@ app = FastAPI(
     description="Microservicio interno para clasificación de prendas y generación de outfits.",
     version="0.1.0"
 )
+
+# Middleware de errores (se ejecuta PRIMERO, antes que CORS)
+app.add_middleware(ErrorHandlerMiddleware)
 
 # CORS para desarrollo
 app.add_middleware(
@@ -30,4 +35,9 @@ app.include_router(outfit.router, tags=["Outfits"])
 @app.get("/health")
 async def health_check():
     """Endpoint de monitoreo."""
-    return {"status": "ok", "service": "backend-ai"}
+    return {
+        "status": "ok",
+        "service": "backend-ai",
+        "model": settings.ai_model_name,
+        "ai_configured": bool(settings.ai_api_key)
+    }
