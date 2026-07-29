@@ -1,24 +1,39 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-
-/**
- * Página de Login / Splash Screen.
- *
- * Para el MVP, usa un login simulado (sin Supabase Auth).
- * El usuario hace click y "entra" directamente al armario.
- * Cuando integremos auth real, aquí se agregará el flujo OAuth.
- */
+import { supabase } from '../lib/supabase'
 
 export default function Login() {
-  const navigate = useNavigate()
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isRegister, setIsRegister] = useState(false)
+  const [error, setError] = useState(null)
 
-  const handleLogin = () => {
-    setIsLoading(true)
-    // Simular delay de autenticación
-    setTimeout(() => {
-      navigate('/closet')
-    }, 800)
+  const handleAuth = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      if (isRegister) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        })
+        if (error) throw error
+        // If email confirmation is off, it logs in automatically or requires sign in.
+        // If it throws no error, let's assume it succeeded.
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        if (error) throw error
+      }
+    } catch (err) {
+      setError(err.message || 'Ocurrió un error en la autenticación.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -29,21 +44,48 @@ export default function Login() {
           <p className="mono login-tagline">Tu armario inteligente</p>
         </div>
 
-        <div className="login-description">
-          <p>Digitaliza tu ropa, recibe outfits sugeridos por IA y nunca más pierdas tiempo eligiendo qué ponerte.</p>
-        </div>
+        {error && (
+          <div style={{ backgroundColor: '#ff5a3633', color: '#ff5a36', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
+            {error}
+          </div>
+        )}
 
-        <button
-          className="btn btn-primary login-btn"
-          onClick={handleLogin}
-          disabled={isLoading}
-          id="login-button"
+        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+          />
+          <button
+            type="submit"
+            className="btn btn-primary login-btn"
+            disabled={loading}
+            style={{ marginBottom: '8px' }}
+          >
+            {loading ? 'Cargando...' : (isRegister ? 'Crear cuenta' : 'Iniciar sesión')}
+          </button>
+        </form>
+
+        <button 
+          onClick={() => setIsRegister(!isRegister)} 
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', textDecoration: 'underline' }}
         >
-          {isLoading ? 'Entrando...' : 'Empezar'}
+          {isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
         </button>
 
-        <p className="mono login-footer">
-          MVP v0.1.0 — Desarrollo local
+        <p className="mono login-footer" style={{ marginTop: '32px' }}>
+          MVP v0.1.0 — Autenticación Real
         </p>
       </div>
     </div>

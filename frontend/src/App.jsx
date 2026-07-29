@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { supabase } from './lib/supabase'
 import './index.css'
 
 import Layout from './components/Layout'
@@ -8,33 +10,61 @@ import AddItem from './pages/AddItem'
 import OutfitSuggestion from './pages/OutfitSuggestion'
 import SavedOutfits from './pages/SavedOutfits'
 
-/**
- * Componente raíz.
- *
- * Estructura de rutas:
- * /           → Login (splash)
- * /closet     → Mi Armario (dentro del Layout con navbar)
- * /add-item   → Añadir Prenda
- * /outfit     → ¿Qué me pongo?
- * /saved      → Outfits Guardados
- */
-
 function App() {
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (loading) {
+    return <div className="loading-spinner" style={{ minHeight: '100vh' }} />
+  }
+
+  // Componente de protección de rutas
+  const ProtectedRoute = ({ children }) => {
+    if (!session) {
+      return <Navigate to="/" replace />
+    }
+    return children
+  }
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta pública (sin navbar) */}
-        <Route path="/" element={<Login />} />
+        {/* Ruta pública */}
+        <Route 
+          path="/" 
+          element={session ? <Navigate to="/closet" replace /> : <Login />} 
+        />
 
-        {/* Rutas protegidas (con navbar inferior) */}
-        <Route element={<Layout />}>
+        {/* Rutas protegidas */}
+        <Route 
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/closet" element={<Closet />} />
           <Route path="/add-item" element={<AddItem />} />
           <Route path="/outfit" element={<OutfitSuggestion />} />
           <Route path="/saved" element={<SavedOutfits />} />
         </Route>
 
-        {/* Ruta catch-all: redirigir al login */}
+        {/* Ruta catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

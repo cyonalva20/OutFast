@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import '../index.css'
 
 /**
@@ -8,8 +9,19 @@ import '../index.css'
  */
 
 export default function Layout() {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+
   return (
     <div className="app-layout">
+      <header style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ fontSize: '1.2rem', margin: 0, fontFamily: 'var(--font-display)', color: 'var(--accent-primary)' }}>OutFast</h2>
+        <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', textDecoration: 'underline', cursor: 'pointer' }}>Salir</button>
+      </header>
       <main className="app-main">
         <Outlet />
       </main>
