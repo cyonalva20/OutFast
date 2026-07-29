@@ -77,14 +77,54 @@ public class OutfitService {
             throw new RuntimeException("No tienes suficientes prendas limpias para generar un outfit. Marca algunas como limpias.");
         }
 
-        // TODO: Llamar al microservicio de IA para generar el outfit
-        // Por ahora, crear un outfit placeholder
+        // Construir el payload para Python
+        List<Map<String, Object>> payload = cleanItems.stream().map(item -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", item.getId().toString());
+            map.put("category", item.getCategory());
+            map.put("color", item.getColor());
+            map.put("style_tags", item.getStyleTags() != null ? Arrays.asList(item.getStyleTags()) : new ArrayList<>());
+            map.put("image_url", item.getImageUrl());
+            return map;
+        }).collect(Collectors.toList());
+
+        List<ClothingItem> selectedItems = new ArrayList<>();
+        
+        try {
+            // Llamar al microservicio de IA
+            List<Map<String, Object>> suggestions = aiClientService.generateOutfits(payload);
+            
+            if (suggestions != null && !suggestions.isEmpty()) {
+                Map<String, Object> bestSuggestion = suggestions.get(0);
+                List<String> itemIds = (List<String>) bestSuggestion.get("item_ids");
+                
+                // Validar silenciosamente los IDs (Ignorar alucinaciones de la IA)
+                if (itemIds != null) {
+                    for (String strId : itemIds) {
+                        try {
+                            UUID uuid = UUID.fromString(strId);
+                            clothingItemRepository.findById(uuid).ifPresent(selectedItems::add);
+                        } catch (IllegalArgumentException e) {
+                            // Ignorar IDs mal formateados que haya devuelto la IA
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Manejo robusto de errores si Gemini o Python fallan (timeout, 429, etc.)
+            throw new RuntimeException("La Inteligencia Artificial no pudo generar tu outfit en este momento. Por favor intenta de nuevo en un minuto.");
+        }
+        
+        if (selectedItems.isEmpty()) {
+            throw new RuntimeException("La Inteligencia Artificial no devolvió prendas compatibles. Por favor añade más ropa a tu armario.");
+        }
+
         Outfit daily = Outfit.builder()
                 .userId(userId)
                 .generatedBy("ai")
                 .generationType(com.outfast.model.enums.GenerationType.DAILY_AUTO)
                 .isOutfitOfTheDay(true)
-                .items(new ArrayList<>())
+                .items(selectedItems)
                 .build();
 
         return toResponse(outfitRepository.save(daily));
