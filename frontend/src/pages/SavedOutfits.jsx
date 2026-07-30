@@ -4,6 +4,7 @@ import { outfitsApi } from '../api/outfitsApi'
 export default function SavedOutfits() {
   const [outfits, setOutfits] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('favorites') // 'favorites' | 'history'
   const hasFetchedRef = useRef(false)
 
   useEffect(() => {
@@ -34,21 +35,40 @@ export default function SavedOutfits() {
 
   if (loading) return <div className="loading-spinner" />
 
+  const filteredOutfits = activeTab === 'favorites' 
+    ? outfits.filter(o => o.isFavorite) 
+    : outfits;
+
   return (
     <div id="saved-outfits-page">
       <div className="page-header">
-        <h1>Guardados</h1>
-        <p className="mono">{outfits.length} outfits</p>
+        <h1>{activeTab === 'favorites' ? 'Guardados' : 'Historial'}</h1>
+        <p className="mono">{filteredOutfits.length} outfits</p>
       </div>
 
-      {outfits.length === 0 ? (
+      <div className="closet-filters" style={{ marginBottom: 'var(--space-lg)', justifyContent: 'center' }}>
+        <button
+          className={`filter-chip ${activeTab === 'favorites' ? 'active' : ''}`}
+          onClick={() => setActiveTab('favorites')}
+        >
+          ❤️ Favoritos
+        </button>
+        <button
+          className={`filter-chip ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          🕒 Historial
+        </button>
+      </div>
+
+      {filteredOutfits.length === 0 ? (
         <div className="empty-state">
-          <h3>Sin outfits guardados</h3>
-          <p>Genera un outfit y guárdalo como favorito</p>
+          <h3>{activeTab === 'favorites' ? 'Sin favoritos' : 'Historial vacío'}</h3>
+          <p>{activeTab === 'favorites' ? 'Genera un outfit y guárdalo como favorito' : 'Aún no has generado ningún outfit'}</p>
         </div>
       ) : (
         <div className="saved-list">
-          {outfits.map(outfit => (
+          {filteredOutfits.map(outfit => (
             <div key={outfit.id} className="hangtag saved-outfit-card">
               <div className="saved-outfit-items">
                 {outfit.items && outfit.items.map(item => (
