@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { itemsApi } from '../api/itemsApi'
 
@@ -9,8 +9,11 @@ export default function Closet() {
   const [filter, setFilter] = useState('todos')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const hasFetchedRef = useRef(false)
 
   useEffect(() => {
+    if (hasFetchedRef.current) return
+    hasFetchedRef.current = true
     loadItems()
   }, [])
 
