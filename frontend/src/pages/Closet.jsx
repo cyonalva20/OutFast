@@ -9,11 +9,8 @@ export default function Closet() {
   const [filter, setFilter] = useState('todos')
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
-  const hasFetchedRef = useRef(false)
 
   useEffect(() => {
-    if (hasFetchedRef.current) return
-    hasFetchedRef.current = true
     loadItems()
   }, [])
 
@@ -49,7 +46,7 @@ export default function Closet() {
     <div id="closet-page">
       <div className="page-header">
         <h1>Mi Armario</h1>
-        <p className="mono">{items.length} prendas</p>
+        <p>{items.length} prendas totales</p>
       </div>
 
       <div className="closet-filters">
@@ -59,7 +56,7 @@ export default function Closet() {
             className={`filter-chip ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
-            {f}
+            {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
@@ -69,33 +66,33 @@ export default function Closet() {
           <div className="empty-state">
             <h3>Sin prendas</h3>
             <p>Añade tu primera prenda tocando el botón +</p>
-            <button className="btn btn-primary" onClick={() => navigate('/add-item')}>
+            <button className="btn btn-primary" onClick={() => navigate('/add-item')} style={{ marginTop: 16 }}>
               Añadir prenda
             </button>
           </div>
         ) : (
           filtered.map(item => (
-            <div key={item.id} className="hangtag clothing-card">
-              <div
-                className="clothing-card-image"
-                style={{ backgroundImage: item.imageUrl ? `url(${item.imageUrl})` : 'none',
-                         backgroundSize: 'cover', backgroundPosition: 'center',
-                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                         color: 'var(--accent-secondary)', fontSize: '2rem' }}
+            <div key={item.id} className="clothing-card glass">
+              <button
+                className="status-badge"
+                onClick={(e) => toggleStatus(e, item)}
               >
-                {!item.imageUrl && '👕'}
-              </div>
+                <span className={`status-dot ${item.status === 'LIMPIO' ? 'clean' : 'dirty'}`} />
+                <span>{item.status}</span>
+              </button>
+
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt={item.category} className="clothing-card-image" />
+              ) : (
+                <div className="clothing-card-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--outline-variant)' }}>checkroom</span>
+                </div>
+              )}
+
               <div className="clothing-card-info">
                 <h3>{item.category}</h3>
                 <span className="clothing-card-color">{item.color}</span>
               </div>
-              <button
-                className={`status-badge ${item.status === 'LIMPIO' ? 'status-clean' : 'status-dirty'}`}
-                onClick={(e) => toggleStatus(e, item)}
-                style={{ marginTop: '8px', cursor: 'pointer', border: 'none' }}
-              >
-                {item.status}
-              </button>
             </div>
           ))
         )}

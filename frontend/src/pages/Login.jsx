@@ -20,8 +20,6 @@ export default function Login() {
           password,
         })
         if (error) throw error
-        // If email confirmation is off, it logs in automatically or requires sign in.
-        // If it throws no error, let's assume it succeeded.
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -41,23 +39,23 @@ export default function Login() {
       <div className="login-content">
         <div className="login-brand">
           <h1 className="login-logo">OutFast</h1>
-          <p className="mono login-tagline">Tu armario inteligente</p>
+          <p className="login-tagline" style={{ fontWeight: 500, letterSpacing: '0.05em' }}>Tu armario inteligente con IA</p>
         </div>
 
         {error && (
-          <div style={{ backgroundColor: '#ff5a3633', color: '#ff5a36', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
+          <div style={{ backgroundColor: 'rgba(186, 26, 26, 0.2)', color: '#ffb4ab', padding: '12px', borderRadius: 'var(--radius-md)', marginBottom: '24px', fontSize: '14px', border: '1px solid rgba(186, 26, 26, 0.5)' }}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
           <input
             type="email"
             placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+            style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '16px', outline: 'none' }}
           />
           <input
             type="password"
@@ -65,13 +63,13 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+            style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '16px', outline: 'none' }}
           />
           <button
             type="submit"
-            className="btn btn-primary login-btn"
+            className="btn btn-accent login-btn"
             disabled={loading}
-            style={{ marginBottom: '8px' }}
+            style={{ marginTop: '8px' }}
           >
             {loading ? 'Cargando...' : (isRegister ? 'Crear cuenta' : 'Iniciar sesión')}
           </button>
@@ -79,13 +77,13 @@ export default function Login() {
 
         <button 
           onClick={() => setIsRegister(!isRegister)} 
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', textDecoration: 'underline' }}
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', textDecoration: 'underline', fontSize: '14px' }}
         >
           {isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
         </button>
 
-        <p className="mono login-footer" style={{ marginTop: '32px' }}>
-          MVP v0.1.0 — Autenticación Real
+        <p className="login-footer" style={{ marginTop: '48px', letterSpacing: '0.05em' }}>
+          OUTFAST MVP v1.0
         </p>
       </div>
     </div>

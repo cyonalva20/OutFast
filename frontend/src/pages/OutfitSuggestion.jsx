@@ -1,208 +1,168 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { outfitsApi } from '../api/outfitsApi'
 
 export default function OutfitSuggestion() {
-  const [outfit, setOutfit] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [loadingInitial, setLoadingInitial] = useState(true)
-  const [toast, setToast] = useState('')
-  const [customOccasion, setCustomOccasion] = useState('')
-  const hasFetchedRef = useRef(false)
+  const [customOutfits, setCustomOutfits] = useState([])
+  const [loadingCustom, setLoadingCustom] = useState(false)
+  const [loadingInit, setLoadingInit] = useState(true)
+  const [occasion, setOccasion] = useState('')
 
   useEffect(() => {
-    // Solo fetch una vez al montar. Evita re-fetches por re-render de Supabase auth.
-    if (hasFetchedRef.current) return
-    hasFetchedRef.current = true
-
-    async function loadDaily() {
-      try {
-        const data = await outfitsApi.getDaily()
-        if (data && data.items && data.items.length > 0) {
-          setOutfit(data)
-        }
-      } catch (err) {
-        // 204 No Content es normal (no hay outfit del día aún)
-        if (err.message?.includes('204') || err.message?.includes('No Content')) return
-        console.error('Error cargando outfit diario:', err)
-      } finally {
-        setLoadingInitial(false)
-      }
-    }
-    loadDaily()
+    loadCustomOutfits()
   }, [])
 
-  async function generateOutfit() {
-    setLoading(true)
-    setOutfit(null)
+  async function loadCustomOutfits() {
     try {
-      const data = await outfitsApi.generateDaily()
-      setOutfit(data)
+      const data = await outfitsApi.getCustomToday()
+      if (data) setCustomOutfits(data)
     } catch (err) {
-      showToast(err.message || 'Error al generar outfit')
+      console.error(err)
     } finally {
-      setLoading(false)
+      setLoadingInit(false)
     }
   }
 
-  async function generateCustomOutfit() {
-    if (!customOccasion.trim()) return
-    setLoading(true)
-    setOutfit(null)
+  async function generateCustom() {
+    if (!occasion.trim()) return
     try {
-      const data = await outfitsApi.generateCustom({ occasion: customOccasion })
-      setOutfit(data)
-      setCustomOccasion('')
+      setLoadingCustom(true)
+      const sanitizedOccasion = occasion.substring(0, 100)
+      const data = await outfitsApi.generateCustom({ occasion: sanitizedOccasion })
+      // Add the new custom outfit to the top of the list
+      setCustomOutfits(prev => [data, ...prev])
+      setOccasion('')
     } catch (err) {
-      showToast(err.message || 'Error al generar outfit personalizado')
+      console.error(err)
+      alert("Error generando outfit. Asegúrate de tener ropa limpia.")
     } finally {
-      setLoading(false)
+      setLoadingCustom(false)
     }
   }
 
-  async function handleFavorite() {
+  async function toggleFav(outfit, index) {
     if (!outfit) return
     try {
       const updated = await outfitsApi.toggleFavorite(outfit.id)
-      setOutfit(updated)
-      showToast(updated.isFavorite ? '♥ Guardado en favoritos' : 'Removido de favoritos')
+      setCustomOutfits(prev => {
+        const copy = [...prev]
+        copy[index] = updated
+        return copy
+      })
     } catch (err) {
       console.error(err)
     }
   }
 
-  function showToast(msg) {
-    setToast(msg)
-    setTimeout(() => setToast(''), 3000)
-  }
-
-  // Skeleton Loader component
-  function SkeletonLoader() {
-    return (
-      <div className="glass-stage" style={{ marginTop: 'var(--space-md)' }}>
-        <div className="skeleton-loader">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton-card">
-              <div className="skeleton-image" />
-              <div className="skeleton-text" />
-            </div>
-          ))}
-        </div>
-        <p className="mono" style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '8px' }}>
-          La IA está analizando tus prendas...
-        </p>
-      </div>
-    )
+  function handleCustomGenerate(e) {
+    e.preventDefault()
+    generateCustom()
   }
 
   return (
     <div id="outfit-page">
       <div className="page-header">
-        <h1>¿Qué me pongo?</h1>
-        <p>Genera un outfit con tus prendas limpias</p>
+        <h1>IA Outfit</h1>
+        <p>Genera outfits personalizados para cualquier ocasión.</p>
       </div>
 
-      {/* Estado inicial de carga */}
-      {loadingInitial && <div className="loading-spinner" />}
+      {/* --- Prompt input bar --- */}
+      <form className="ai-input-bar glass" onSubmit={handleCustomGenerate} style={{ marginBottom: 32 }}>
+        <span className="material-symbols-outlined ai-input-icon">auto_awesome</span>
+        <input 
+          type="text" 
+          placeholder="Ocasión (ej. Lluvia, Entrevista, Cita...)"
+          value={occasion}
+          onChange={e => setOccasion(e.target.value)}
+          maxLength={100}
+        />
+        <button type="submit" className="btn btn-accent" style={{ padding: '8px 16px', borderRadius: 8 }} disabled={!occasion.trim() || loadingCustom}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>flare</span>
+        </button>
+      </form>
 
-      {/* Empty State — sin outfit generado */}
-      {!outfit && !loading && !loadingInitial && (
-        <div className="outfit-empty-state">
-          <div className="outfit-empty-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z" />
-            </svg>
-          </div>
-          <h3>Tu outfit del día</h3>
-          <p>Presiona el botón para que la IA combine tus prendas</p>
-
-          <button className="btn btn-primary" onClick={generateOutfit} id="generate-outfit-btn" style={{ padding: '10px 32px' }}>
-            ✨ Generar outfit
-          </button>
-
-          {/* Sección de ocasión personalizada */}
-          <div className="occasion-section">
-            <div className="occasion-divider">o personaliza</div>
-            <div className="occasion-input-wrapper">
-              <span className="occasion-icon">🎯</span>
-              <input
-                type="text"
-                className="occasion-input"
-                placeholder="Ej. Cita casual, Oficina..."
-                value={customOccasion}
-                onChange={e => setCustomOccasion(e.target.value)}
-                maxLength={100}
-                onKeyDown={e => e.key === 'Enter' && generateCustomOutfit()}
-              />
+      {/* --- Loading indicator for new custom outfit --- */}
+      {loadingCustom && (
+        <div className="glass-stage" style={{ marginBottom: 32 }}>
+          <div className="outfit-result-header">
+            <div className="outfit-result-title">
+              <span className="material-symbols-outlined" style={{ color: 'var(--on-tertiary-container)' }}>auto_awesome</span>
+              <h3>Generando...</h3>
             </div>
-            <button
-              className="btn btn-secondary"
-              onClick={generateCustomOutfit}
-              disabled={!customOccasion.trim()}
-              style={{ opacity: customOccasion.trim() ? 1 : 0.5 }}
-            >
-              Generar para esta ocasión
-            </button>
+          </div>
+          <div className="skeleton-loader">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="skeleton-card">
+                <div className="skeleton-image"></div>
+                <div className="skeleton-text"></div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Skeleton loader mientras la IA trabaja */}
-      {loading && <SkeletonLoader />}
-
-      {/* Outfit generado */}
-      {outfit && (
-        <>
-          <div className="glass-stage">
-            <div className="outfit-display">
-              <div className="outfit-items-row">
-                {outfit.items && outfit.items.length > 0 ? (
-                  outfit.items.map(item => (
-                    <div key={item.id} className="outfit-item-card hangtag">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.category}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: '100%', aspectRatio: '3/4',
-                            background: 'var(--bg-base)',
-                            borderRadius: 'var(--radius-sm)',
-                            display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontSize: '2rem'
-                          }}
-                        >
-                          👕
-                        </div>
-                      )}
-                      <p>{item.category} — {item.color}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="mono" style={{ color: 'var(--text-secondary)' }}>
-                    No se pudieron cargar las prendas
-                  </p>
-                )}
-              </div>
-            </div>
+      {/* --- Empty state when no custom outfits yet --- */}
+      {!loadingInit && customOutfits.length === 0 && !loadingCustom && (
+        <div className="outfit-empty-state">
+          <div className="outfit-empty-icon">
+            <span className="material-symbols-outlined" style={{ fontSize: 40, color: 'var(--on-tertiary-container)' }}>auto_awesome</span>
           </div>
-
-          <div className="outfit-actions" style={{ marginTop: 'var(--space-md)' }}>
-            <button className="btn btn-secondary" onClick={() => setOutfit(null)} style={{ fontSize: '0.85rem' }}>
-              ← Volver
-            </button>
-            <button className="btn btn-secondary" onClick={generateOutfit} style={{ fontSize: '0.85rem' }}>
-              ↻ Regenerar
-            </button>
-            <button className="btn btn-primary" onClick={handleFavorite} style={{ fontSize: '0.85rem' }}>
-              {outfit.isFavorite ? '♥ Favorito' : '♡ Guardar'}
-            </button>
+          <div>
+            <h3 style={{ fontSize: 20, color: 'var(--primary)', fontWeight: 600, marginBottom: 8 }}>Crea un outfit personalizado</h3>
+            <p style={{ color: 'var(--on-surface-variant)' }}>Escribe la ocasión arriba y deja que la IA arme el conjunto perfecto para ti.</p>
           </div>
-        </>
+        </div>
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      {/* --- Custom outfits (persisted, with occasion shown) --- */}
+      {customOutfits.map((outfit, idx) => (
+        <div key={outfit.id} className="glass-stage" style={{ marginBottom: 32 }}>
+          <div className="outfit-result-header">
+            <div className="outfit-result-title">
+              <span className="material-symbols-outlined" style={{ color: 'var(--on-tertiary-container)' }}>check_circle</span>
+              <h3>Outfit Personalizado</h3>
+            </div>
+            <span className="outfit-badge">Generado hoy</span>
+          </div>
+
+          {outfit.occasionContext && (
+            <div style={{ 
+              marginBottom: 16, fontSize: 14, color: 'var(--primary)', 
+              background: 'rgba(255,255,255,0.5)', padding: '12px 16px', 
+              borderRadius: 8, border: '1px solid rgba(216,103,53,0.15)',
+              display: 'flex', alignItems: 'center', gap: 8
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--on-tertiary-container)' }}>event</span>
+              <span><strong>Ocasión:</strong> {outfit.occasionContext}</span>
+            </div>
+          )}
+
+          <div className="outfit-items-row">
+            {outfit.items && outfit.items.map(item => (
+              <div key={item.id} className="outfit-item-card">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.category} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', background: 'var(--surface-variant)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 32 }}>checkroom</span>
+                  </div>
+                )}
+                <div className="outfit-item-label">{item.category}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="outfit-actions" style={{ marginTop: 16 }}>
+            <button 
+              className="btn btn-accent" 
+              onClick={() => toggleFav(outfit, idx)}
+              style={outfit.isFavorite ? { background: 'var(--surface-card)', color: 'var(--on-tertiary-container)', border: '1px solid var(--on-tertiary-container)' } : {}}
+            >
+              <span className={`material-symbols-outlined ${outfit.isFavorite ? 'icon-fill' : ''}`}>favorite</span> 
+              {outfit.isFavorite ? 'Guardado' : 'Favorito'}
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

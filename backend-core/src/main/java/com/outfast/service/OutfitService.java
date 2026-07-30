@@ -206,15 +206,32 @@ public class OutfitService {
             throw new RuntimeException("La IA no devolvió prendas compatibles para esta ocasión. Por favor intenta con otra.");
         }
 
+        // Save the occasion context so the frontend can display it
+        String occasionText = (request != null && request.getOccasion() != null) 
+                ? request.getOccasion().trim() : null;
+
         Outfit customOutfit = Outfit.builder()
                 .userId(userId)
                 .generatedBy("ai")
                 .generationType(com.outfast.model.enums.GenerationType.MANUAL_REQUEST)
                 .isOutfitOfTheDay(false)
+                .occasionContext(occasionText)
                 .items(selectedItems)
                 .build();
 
         return toResponse(outfitRepository.save(customOutfit));
+    }
+
+    /**
+     * Obtener los outfits personalizados generados hoy (últimas 18 horas).
+     */
+    public List<OutfitResponse> getTodayCustomOutfits(UUID userId) {
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(18);
+        return outfitRepository
+                .findByUserIdAndIsOutfitOfTheDayFalseAndCreatedAtAfterOrderByCreatedAtDesc(userId, cutoff)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     /** Convertir entidad a DTO */
@@ -239,6 +256,7 @@ public class OutfitService {
                 .generationType(outfit.getGenerationType())
                 .baseItemId(outfit.getBaseItemId())
                 .isOutfitOfTheDay(outfit.getIsOutfitOfTheDay())
+                .occasionContext(outfit.getOccasionContext())
                 .createdAt(outfit.getCreatedAt())
                 .items(itemResponses)
                 .build();

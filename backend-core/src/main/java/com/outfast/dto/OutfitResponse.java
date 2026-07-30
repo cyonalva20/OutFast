@@ -23,6 +23,7 @@ public class OutfitResponse {
     private GenerationType generationType;
     private UUID baseItemId;
     private Boolean isOutfitOfTheDay;
+    private String occasionContext;
     private LocalDateTime createdAt;
 
     /** Lista de prendas que componen este outfit */

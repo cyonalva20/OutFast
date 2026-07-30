@@ -55,6 +55,13 @@ public class OutfitController {
         return ResponseEntity.ok(service.generateCustom(userId, request));
     }
 
+    @GetMapping("/custom-today")
+    public ResponseEntity<List<OutfitResponse>> getCustomToday(
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(service.getTodayCustomOutfits(userId));
+    }
+
     @PatchMapping("/{id}/favorite")
     public ResponseEntity<OutfitResponse> toggleFavorite(
             @AuthenticationPrincipal Jwt jwt,

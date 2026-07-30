@@ -59,6 +59,10 @@ public class Outfit {
     @Builder.Default
     private Boolean isOutfitOfTheDay = false;
 
+    /** Contexto de ocasión proporcionado por el usuario (solo custom outfits) */
+    @Column(name = "occasion_context")
+    private String occasionContext;
+
     /**
      * Relación muchos-a-muchos con ClothingItem.
      * Un outfit contiene varias prendas, y una prenda puede

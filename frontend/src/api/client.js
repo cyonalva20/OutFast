@@ -8,7 +8,9 @@
 
 import { supabase } from '../lib/supabase';
 
-const API_BASE = '/api';
+// Si existe VITE_API_URL (ej. en producción Vercel o en local con .env), úsala. 
+// Si no, asume el mismo dominio (para casos donde haya un proxy o load balancer).
+const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api';
 
 async function request(method, path, body = null) {
   // Obtener la sesión actual de Supabase

@@ -19,4 +19,8 @@ public interface OutfitRepository extends JpaRepository<Outfit, UUID> {
     /** Buscar el outfit del día vigente (creado después de cierta hora) */
     Optional<Outfit> findByUserIdAndIsOutfitOfTheDayTrueAndCreatedAtAfter(
             UUID userId, LocalDateTime after);
+
+    /** Buscar outfits personalizados (no daily) creados después de cierta hora */
+    List<Outfit> findByUserIdAndIsOutfitOfTheDayFalseAndCreatedAtAfterOrderByCreatedAtDesc(
+            UUID userId, LocalDateTime after);
 }

@@ -4,7 +4,7 @@ import { itemsApi } from '../api/itemsApi'
 import { supabase } from '../lib/supabase'
 
 const CATEGORIES = ['camisa', 'pantalón', 'zapatos', 'chaqueta', 'vestido', 'falda', 'short', 'accesorio', 'otro']
-const STYLE_OPTIONS = ['casual', 'formal', 'deportivo', 'elegante', 'playero']
+const STYLE_OPTIONS = ['casual', 'formal', 'deportivo', 'elegante', 'playero', 'verano', 'invierno']
 
 export default function AddItem() {
   const navigate = useNavigate()
@@ -63,9 +63,6 @@ export default function AddItem() {
   async function handleSubmit(e) {
     e.preventDefault()
     
-    // Al requerir la IA, necesitamos al menos la foto. 
-    // Por ahora dejaremos que el usuario decida si ponerla, pero si la sube, se clasifica automáticamente por backend.
-    
     setSaving(true)
     let finalImageUrl = form.imageUrl
 
@@ -96,23 +93,24 @@ export default function AddItem() {
     <div id="add-item-page">
       <div className="page-header">
         <h1>Añadir Prenda</h1>
-        <p>Registra una nueva prenda en tu armario</p>
+        <p>Sube una foto para agregarla a tu armario digital.</p>
       </div>
 
       <form className="add-item-form" onSubmit={handleSubmit}>
         <div 
           className="image-upload-area" 
           onClick={() => fileInputRef.current?.click()}
-          style={imagePreview ? { backgroundImage: `url(${imagePreview})`, backgroundSize: 'cover', backgroundPosition: 'center', borderStyle: 'solid' } : {}}
+          style={imagePreview ? { backgroundImage: `url(${imagePreview})`, borderStyle: 'solid' } : {}}
         >
           {!imagePreview && (
             <>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="M21 15l-5-5L5 21" />
-              </svg>
-              <span className="mono">Toca para subir foto</span>
+              <div className="upload-icon-circle">
+                <span className="material-symbols-outlined" style={{ fontSize: 32 }}>add_a_photo</span>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 4 }}>Toca para subir foto</p>
+                <p style={{ fontSize: 12 }}>Formatos: JPG, PNG</p>
+              </div>
             </>
           )}
         </div>
@@ -124,51 +122,63 @@ export default function AddItem() {
           style={{ display: 'none' }} 
         />
 
-        <div className="form-group">
-          <label htmlFor="category">Categoría {imageFile && '(La IA puede llenarlo automáticamente)'}</label>
-          <select
-            id="category"
-            value={form.category}
-            onChange={e => setForm({ ...form, category: e.target.value })}
-            required={!imageFile}
-          >
-            <option value="">Seleccionar...</option>
-            {CATEGORIES.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+        <div className="ai-banner">
+          <span className="material-symbols-outlined icon-fill" style={{ color: 'var(--on-tertiary-container)' }}>auto_awesome</span>
+          <span>La IA detectará categoría y color automáticamente</span>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="color">Color</label>
-          <input
-            id="color"
-            type="text"
-            placeholder="ej: azul marino"
-            value={form.color}
-            onChange={e => setForm({ ...form, color: e.target.value })}
-            required={!imageFile}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Estilos</label>
-          <div className="style-tags-container">
-            {STYLE_OPTIONS.map(style => (
-              <button
-                key={style}
-                type="button"
-                className={`style-tag-option ${selectedStyles.includes(style) ? 'selected' : ''}`}
-                onClick={() => toggleStyle(style)}
+        <div className="glass" style={{ padding: 24, borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className="form-group">
+            <label htmlFor="category">Categoría</label>
+            <div style={{ position: 'relative' }}>
+              <select
+                id="category"
+                value={form.category}
+                onChange={e => setForm({ ...form, category: e.target.value })}
+                required={!imageFile}
+                style={{ width: '100%', appearance: 'none' }}
               >
-                {style}
-              </button>
-            ))}
+                <option value="">Seleccionar...</option>
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined" style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--on-surface-variant)' }}>expand_more</span>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="color">Color Dominante</label>
+            <input
+              id="color"
+              type="text"
+              placeholder="ej: Azul Marino"
+              value={form.color}
+              onChange={e => setForm({ ...form, color: e.target.value })}
+              required={!imageFile}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Estilo / Ocasión</label>
+            <div className="style-tags-container">
+              {STYLE_OPTIONS.map(style => (
+                <button
+                  key={style}
+                  type="button"
+                  className={`style-tag-option ${selectedStyles.includes(style) ? 'selected' : ''}`}
+                  onClick={() => toggleStyle(style)}
+                >
+                  {style.charAt(0).toUpperCase() + style.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <button className="btn btn-primary" type="submit" disabled={saving || uploadingImage} id="save-item-btn">
-          {uploadingImage ? 'Subiendo imagen...' : (saving ? 'Guardando...' : 'Guardar prenda')}
+        <button className="btn btn-primary" type="submit" disabled={saving || uploadingImage} style={{ padding: '16px', fontSize: 16, marginTop: 8 }}>
+          <span className="material-symbols-outlined">check</span>
+          {uploadingImage ? 'Subiendo imagen...' : (saving ? 'Guardando...' : 'Guardar Prenda')}
         </button>
       </form>
 

@@ -23,4 +23,4 @@ EXPOSE 8000
 # Comando para arrancar el servidor
 # --host 0.0.0.0 permite que Docker reciba conexiones externas
 # --reload activa hot-reload (solo para desarrollo)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

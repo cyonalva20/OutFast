@@ -12,6 +12,9 @@ export const outfitsApi = {
   /** Obtener el outfit del día actual si existe */
   getDaily: () => api.get('/outfits/daily'),
 
+  /** Obtener outfits personalizados de hoy */
+  getCustomToday: () => api.get('/outfits/custom-today'),
+
   /** Generar el outfit del día (conecta con IA) */
   generateDaily: () => api.post('/outfits/generate-daily'),
 
