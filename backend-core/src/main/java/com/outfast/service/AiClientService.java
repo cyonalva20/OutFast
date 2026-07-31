@@ -67,7 +67,7 @@ public class AiClientService {
         return Map.of(
                 "category", "otro",
                 "color", "sin definir",
-                "style_tags", new String[]{"casual"}
+                "style_tags", List.of("casual")
         );
     }
 
