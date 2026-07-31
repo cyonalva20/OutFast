@@ -55,7 +55,7 @@ public class AiClientService {
 
         } catch (Exception e) {
             log.error("Error al comunicarse con el microservicio de IA: {}", e.getMessage());
-            throw new RuntimeException("Error al comunicarse con la IA. Es posible que el servicio esté despertando, intenta de nuevo en un momento.", e);
+            throw new RuntimeException("Error IA: " + e.getMessage(), e);
         }
     }
 
