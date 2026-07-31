@@ -51,25 +51,14 @@ public class AiClientService {
             }
 
             log.warn("El microservicio de IA devolvió un estado inesperado: {}", response.getStatusCode());
-            return getDefaultClassification();
+            throw new RuntimeException("El microservicio de IA no devolvió una respuesta exitosa");
 
         } catch (Exception e) {
             log.error("Error al comunicarse con el microservicio de IA: {}", e.getMessage());
-            return getDefaultClassification();
+            throw new RuntimeException("Error al comunicarse con la IA. Es posible que el servicio esté despertando, intenta de nuevo en un momento.", e);
         }
     }
 
-    /**
-     * Clasificación por defecto si la IA falla.
-     * El usuario podrá editar manualmente desde el frontend.
-     */
-    private Map<String, Object> getDefaultClassification() {
-        return Map.of(
-                "category", "otro",
-                "color", "sin definir",
-                "style_tags", List.of("casual")
-        );
-    }
 
     /**
      * Solicita a la IA la generación de outfits basados en prendas disponibles.
